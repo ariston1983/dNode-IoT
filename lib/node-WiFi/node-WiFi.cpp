@@ -1,5 +1,14 @@
 #include <node-WiFi.h>
 
+int WiFi_scanAP(String *&ssid){
+  WiFi.mode(WIFI_AP_STA);
+  int _nets = WiFi.scanNetworks(false, true);
+  ssid = new String[_nets];
+  for (int i=0; i<_nets; i++)
+    ssid[i] = WiFi.SSID(i);
+  return _nets;
+};
+
 APControl::APControl(void){
   this->localIP = IPAddress(192, 168, 4, 2);
   this->gateway = IPAddress(192, 168, 4, 1);
@@ -80,3 +89,14 @@ const char* APControl::getSSID(){ return this->ssid; };
 const char* APControl::getPassword(){ return this->password; };
 int APControl::getChannel(){ return this->channel; };
 bool APControl::getHidden(){ return this->hidden; };
+
+STAControl::STAControl(const char* ssid, const char* password){
+  this->ssid = ssid;
+  this->password = password;
+};
+bool STAControl::valid(){
+  
+};
+bool STAControl::parseConfig(const char *json){};
+bool STAControl::connect(){};
+bool STAControl::disconnect(){};

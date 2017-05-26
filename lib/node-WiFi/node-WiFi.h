@@ -1,6 +1,8 @@
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 
+int WiFi_scanAP(String *&ssid);
+
 class APControl{
 private:
   IPAddress localIP;
@@ -23,6 +25,7 @@ public:
   int getChannel();
   bool getHidden();
 };
+
 class STAControl{
 private:
   const char* ssid;
