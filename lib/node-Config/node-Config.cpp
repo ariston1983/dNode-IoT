@@ -6,6 +6,8 @@ const char* nConfig::path(){
   return _path.c_str();
 };
 
+nConfig::nConfig(const char* module){};
+
 bool nConfig::load(){
   const char* _path = this->path();
   SPIFFS.begin();
@@ -13,11 +15,9 @@ bool nConfig::load(){
     auto _file = SPIFFS.open(_path, "r");
     if (_file){
       DynamicJsonBuffer _buffer(512);
-      JsonObject& _config = _buffer.parseObject(_file);
-      if (_config["module"] && _config["module"] == this->_module){
-        this->_config = &_config;
+      this->_config = _buffer.parse(_file);
+      if (this->_config.success() && this->_config["module"] && this->_config["module"] == this->_module)
         this->_exists = true;
-      }
       else this->_exists = false;
     }
     else this->_exists = false;
@@ -27,7 +27,7 @@ bool nConfig::load(){
 };
 
 bool nConfig::save(){
-  if (this->_config == NULL){
+  if (!this->_exists){
     DynamicJsonBuffer _buffer(512);
     this->_config = _buffer.createObject();
     this->_config["module"] = this->_module;
@@ -43,9 +43,4 @@ bool nConfig::remove(){
   const char* _path = this->path();
   if (SPIFFS.exists(_path)) return SPIFFS.remove(_path);
   else return true;
-};
-
-template<typename T>
-void nConfig::set<T>(const char* key, T value){
-  this->_config[key] = value;
 };
