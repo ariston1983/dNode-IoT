@@ -1,42 +1,26 @@
 #include "Arduino.h"
 #include "FS.h"
-#include <node-Config.h>
+#include <node-WiFi.h>
 
 void setup(){
   Serial.begin(115200);
+  Serial.println();
 
-  //SPIFFS.begin();
-  //File _file = SPIFFS.open("/test.txt", "r");
-  //String _content = _file.readString();
-  //Serial.println(_content);
-  //_file.close();
+  //APControl* _ap = new APControl();
+  //APControl* _ap = new APControl("dNode-AP", "dNode-AP", 6, false);
+  //_ap.saveConfig();
 
-  //Dir _dir = SPIFFS.openDir("/");
-  //while (_dir.next()){
-  //  Serial.println(_dir.fileName());
-  //  Serial.println(_dir.fileSize());
-  //  File _file = _dir.openFile("r");
-  //  //String _content = _file.readStringUntil('\n');
-  //  String _content = _file.readString();
-  //  Serial.println(_content);
-  //}
+  // nConfig* _apConf = loadConfig("wifi-AP");
+  // Serial.println(_apConf->toString());
+  // if (_apConf->has("localIP")) Serial.println("Has LocalIP config");
+  // else Serial.println("No LocalIP config");
 
-  //fileWrite("/test.txt", "some text here, dummy");
-  //String _read = fileRead("/test.txt");
-  //Serial.println(_read);
+  SPIFFS.begin();
 
-  //nConfig* _config = new nConfig("testing");
-  //_config->set("key1", "hello");
-  //if (_config->save()) Serial.println("config saved");
-  //else Serial.println("config not saved");
-
-  //_config = new nConfig("testing");
-  //if (_config->load()){
-  //  const char* value = _config->get<const char*>("key1");
-  //  Serial.print("key1 value: ");
-  //  Serial.println(value);
-  //}
-  //else Serial.println("unable load config");
+  nConfig* _conf = loadConfig("dummy");
+  if (!_conf->has("key2")) //Serial.println("no key2 config");
+    _conf->set<const char*>("key2", "dodol");
+  Serial.println(_conf->toString());
 
   Serial.println("Prep complete...");
 }

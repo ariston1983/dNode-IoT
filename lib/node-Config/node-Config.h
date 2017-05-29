@@ -2,31 +2,9 @@
 #include "FS.h"
 #include <ArduinoJson.h>
 
-void prepFS(){
-  if (!SPIFFS.exists("/fs.info")){
-    SPIFFS.format();
-    File _file = SPIFFS.open("/fs.info", "w");
-    _file.println("FS ready indicator");
-    _file.close();
-  }
-};
-bool writeFile(String path, String content){
-  prepFS();
-  File _file = SPIFFS.open(path.c_str(), "w");
-  bool _res = _file.println(content.c_str());
-  _file.close();
-  return _res;
-};
-String readFile(String path){
-  prepFS();
-  String _content = "";
-  if (SPIFFS.exists(path.c_str())){
-    File _file = SPIFFS.open(path.c_str(), "r");
-    _content += _file.readString();
-    _file.close();
-  }
-  return _content;
-};
+void prepFS();
+bool writeFile(String path, String content);
+String readFile(String path);
 
 class nConfig{
 private:
@@ -39,19 +17,25 @@ public:
   bool load();
   bool save();
   bool remove();
+  bool has(const char* key);
+  template<typename TCompare>
+  bool isEqual(const char* key, TCompare equal){
+    if (this->has(key)) return this->_config[key] == equal;
+    else return false;
+  };
   template<typename TReturn>
   TReturn get(const char* key){
-    if (this->_exist && key != "") return this->_config[key];
-    else return NULL;
+    TReturn _ret;
+    if (this->_exist && key != "") _ret = this->_config[key];
+    return _ret;
   };
   template<typename TValue>
   void set(const char* key, TValue value){
+    Serial.print("Set config key: "); Serial.println(key);
+    Serial.print("With value: "); Serial.println(value);
     if (this->_exist && key != "") this->_config[key] = value;
   };
+  String toString();
 };
 
-nConfig* loadConfig(const char* module){
-  if (module != NULL && module != "")
-    return new nConfig(module);
-  else return NULL;
-};
+nConfig* loadConfig(const char* module);
