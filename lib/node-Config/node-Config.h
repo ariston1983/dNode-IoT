@@ -39,3 +39,31 @@ public:
 };
 
 nConfig* loadConfig(const char* module);
+
+class configElement{
+protected:
+  JsonVariant _storage;
+
+  template <typename TSetValue>
+  void set(String key, TSetValue value){
+    if (key != "") this->_storage[key] = value;
+  };
+  template <typename TGetValue>
+  TGetValue get(String key){
+    TGetValue _ret;
+    if (key != "") _ret = this->_storage[key];
+    return _ret;
+  };
+  bool copyTo(JsonVariant obj, String key);
+public:
+  String toString();
+};
+class nodeConfig : public configElement{
+private:
+  String _module;
+  String fsPath();
+public:
+  nodeConfig(String module);
+  bool load();
+  bool save();
+};

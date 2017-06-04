@@ -87,3 +87,42 @@ String nConfig::toString(){
   this->_config.printTo(_json);
   return _json;
 };
+
+bool configElement::copyTo(JsonVariant obj, String key){
+  if (key != ""){
+    obj[key] = this->_storage;
+    return true;
+  }
+  else return false;
+};
+String configElement::toString(){
+  String _json;
+  this->_storage.printTo(_json);
+  return _json;
+};
+
+String nodeConfig::fsPath(){
+  String _path = "/config-"+this->_module+".json";
+  return _path;
+};
+bool nodeConfig::load(){
+  String _fsContent = readFile(this->fsPath());
+  DynamicJsonBuffer _buffer(512);
+  if (_fsContent != ""){
+    this->_storage = _buffer.parseObject(_fsContent);
+    if (this->_storage && this->_storage["module"] == this->_module.c_str()) return true;
+    else{
+      this->_storage = _buffer.createObject();
+      this->_storage["module"] = this->_module.c_str();
+    }
+  }
+  else{
+    this->_storage = _buffer.createObject();
+    this->_storage["module"] = this->_module.c_str();
+    return false;
+  }
+};
+bool nodeConfig::save(){
+  writeFile(this->fsPath(), this->toString());
+  return true;
+};
