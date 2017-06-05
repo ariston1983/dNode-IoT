@@ -1,42 +1,46 @@
-#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <node-Config.h>
 
 int WiFi_scanAP(String *&ssid);
 IPAddress stringToIP(const char* ip);
 
-class APControl{
-private:
-  nConfig* _config;
+class STAConfig : public nodeConfig{
+protected:
+  void reset();
 public:
-  APControl();
-  APControl(const char* ssid, const char* password = NULL, int channel = 6, bool hidden = false);
-  bool valid();
+  inline STAConfig(): nodeConfig("node-STA"){};
+  bool isValid();
+};
+class APConfig : public nodeConfig{
+protected:
+  void reset();
+public:
+  inline APConfig(): nodeConfig("node-AP"){};
+  bool isValid();
+  IPAddress localIP(String def = "192.168.4.1");
+  IPAddress gateway(String def = "192.168.4.1");
+  IPAddress subnet(String def = "255.255.255.0");
+};
+typedef STAConfig* nodeSTAConfig;
+typedef APConfig* nodeAPConfig;
+
+class nodeAP{
+private:
+  nodeAPConfig _config;
+public:
+  nodeAP(nodeAPConfig config = NULL);
+  nodeAPConfig config();
   bool startAP();
   bool stopAP();
-  template <typename TValue>
-  void setConfig(String key, TValue value){
-    if (key == "localIP" || key == "gateway" || key == "subnet"){
-      IPAddress _ip;
-      if (!_ip.fromString(value)) return;
-    }
-    return this->_config->set<TValue>(key.c_str(), value);
-  };
-  template <typename TReturn>
-  TReturn getConfig(String key){
-    return this->_config->get<TReturn>(key.c_str());
-  };
-  bool saveConfig();
+  bool reset();
 };
 
-class STAControl{
+class nodeSTA{
 private:
-  const char* ssid;
-  const char* password;
+  nodeSTAConfig _config;
 public:
-  STAControl(const char* ssid, const char* password = NULL);
-  bool valid();
-  bool parseConfig(const char* json);
+  nodeSTA(nodeSTAConfig config = NULL);
+  nodeSTAConfig config();
   bool connect();
   bool disconnect();
 };

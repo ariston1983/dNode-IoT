@@ -15,12 +15,12 @@ void setup(){
   // if (_apConf->has("localIP")) Serial.println("Has LocalIP config");
   // else Serial.println("No LocalIP config");
 
-  SPIFFS.begin();
-
-  nConfig* _conf = loadConfig("dummy");
-  if (!_conf->has("key2")) //Serial.println("no key2 config");
-    _conf->set<const char*>("key2", "dodol");
-  Serial.println(_conf->toString());
+  // SPIFFS.begin();
+  //
+  // nConfig* _conf = loadConfig("dummy");
+  // if (!_conf->has("key2")) //Serial.println("no key2 config");
+  //   _conf->set<const char*>("key2", "dodol");
+  // Serial.println(_conf->toString());
 
   Serial.println("Prep complete...");
 }
