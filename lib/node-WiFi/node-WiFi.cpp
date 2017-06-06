@@ -14,17 +14,31 @@ IPAddress stringToIP(const char* ip){
   return _ip;
 };
 
+STAConfig* STAConfig::defaultConfig(){
+  nodeSTAConfig _config = new STAConfig();
+  _config->reset();
+  _config->save();
+  return _config;
+};
 void STAConfig::reset(){
   nodeConfig::reset();
-  this->set<const char*>("ssid", "unknown");
-  this->set<const char*>("password", NULL);
+  nodeConfig::set<const char*>("ssid", "unknown");
+  nodeConfig::set<const char*>("password", NULL);
 };
 bool STAConfig::isValid(){
-  return !this->isEqual<String>("ssid", "");
+  return !nodeConfig::isEqual<const char*>("ssid", "");
 };
 
+APConfig* APConfig::defaultConfig(){
+  nodeAPConfig _config = new APConfig();
+  _config->reset();
+  _config->save();
+  return _config;
+};
 void APConfig::reset(){
   nodeConfig::reset();
+  //DynamicJsonBuffer _buffer(512);
+  //this->_storage = _buffer.createObject();
   this->set<const char*>("ssid", "node-AP");
   this->set<const char*>("password", "node-AP");
   this->set<int>("channel", 6);
@@ -35,11 +49,11 @@ void APConfig::reset(){
 };
 bool APConfig::isValid(){
   return
-    !this->isEqual("ssid", "") &&
+    !this->isEqual<const char*>("ssid", "") &&
     (this->get<int>("channel") > 0 && this->get<int>("channel") <= 13) &&
-    !this->isEqual("localIP", "") &&
-    !this->isEqual("gateway", "") &&
-    !this->isEqual("subnet", "");
+    !this->isEqual<const char*>("localIP", "") &&
+    !this->isEqual<const char*>("gateway", "") &&
+    !this->isEqual<const char*>("subnet", "");
 };
 
 nodeAP::nodeAP(nodeAPConfig config){};

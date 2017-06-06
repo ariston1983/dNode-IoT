@@ -2,16 +2,17 @@
 #include "FS.h"
 #include <ArduinoJson.h>
 
-void prepFS();
+void prepFS(bool format = false);
 bool writeFile(String path, String content);
 String readFile(String path);
 
 class nodeConfig{
 private:
-  String _module;
   String fsPath();
 protected:
+  String _module;
   JsonVariant _storage;
+  void init();
   virtual void reset();
 public:
   nodeConfig(String module);

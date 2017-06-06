@@ -6,6 +6,19 @@ void setup(){
   Serial.begin(115200);
   Serial.println();
 
+  prepFS(true);
+
+  //Serial.println("Create AP Config");
+  nodeAPConfig _config = new APConfig();
+  //_config->save();
+  //if (_config->load()) Serial.println(_config->toString());
+  //else Serial.println("fail save/load config");
+  Serial.println(_config->toString());
+
+  //nodeAPConfig _apConfig = new APConfig();
+  //if (!_apConfig->load()) _apConfig = APConfig::defaultConfig();
+  //Serial.println(_apConfig->toString());
+
   //APControl* _ap = new APControl();
   //APControl* _ap = new APControl("dNode-AP", "dNode-AP", 6, false);
   //_ap.saveConfig();

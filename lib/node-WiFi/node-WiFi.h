@@ -6,16 +6,18 @@ IPAddress stringToIP(const char* ip);
 
 class STAConfig : public nodeConfig{
 protected:
-  void reset();
+  virtual void reset() override;
 public:
-  inline STAConfig(): nodeConfig("node-STA"){};
+  static STAConfig* defaultConfig();
+  inline STAConfig(): nodeConfig("node-STA"){ nodeConfig::init(); };
   bool isValid();
 };
 class APConfig : public nodeConfig{
 protected:
-  void reset();
+  virtual void reset() override;
 public:
-  inline APConfig(): nodeConfig("node-AP"){};
+  static APConfig* defaultConfig();
+  inline APConfig(): nodeConfig("node-AP"){ nodeConfig::init(); };
   bool isValid();
   IPAddress localIP(String def = "192.168.4.1");
   IPAddress gateway(String def = "192.168.4.1");

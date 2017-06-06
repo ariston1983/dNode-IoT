@@ -1,7 +1,7 @@
 #include <node-Config.h>
 
-void prepFS(){
-  if (!SPIFFS.exists("/fs.info")){
+void prepFS(bool format){
+  if (!SPIFFS.exists("/fs.info") || format){
     SPIFFS.format();
     File _file = SPIFFS.open("/fs.info", "w");
     _file.println("FS ready indicator");
@@ -26,10 +26,13 @@ String readFile(String path){
   return _content;
 };
 
+void nodeConfig::init(){
+  this->reset();
+};
 void nodeConfig::reset(){
   DynamicJsonBuffer _buffer(512);
   this->_storage = _buffer.createObject();
-  this->_storage["module"] = this->_module;
+  this->_storage["module"] = this->_module.c_str();
 };
 String nodeConfig::fsPath(){
   String _path = "/config-"+this->_module+".json";
@@ -42,7 +45,10 @@ nodeConfig::nodeConfig(String module){
 bool nodeConfig::load(){
   String _fsContent = readFile(this->fsPath());
   bool _res = this->parseString(_fsContent);
-  this->set<String>("module", this->_module);
+  if (_res && !this->isEqual<const char*>("module", this->_module.c_str())){
+    this->reset();
+    _res = false;
+  }
   return _res;
 };
 bool nodeConfig::save(){
@@ -61,8 +67,13 @@ bool nodeConfig::parseString(String json){
   }
 }
 String nodeConfig::toString(){
-  String _json;
-  this->_storage.printTo(_json);
+  Serial.println("json stringify");
+  if (!this->_storage || this->_storage == NULL){
+    Serial.println("NULL storage");
+    return "";
+  }
+  char _json[this->_storage.measureLength()+1];
+  this->_storage.printTo(_json, sizeof(_json));
   return _json;
 };
 
