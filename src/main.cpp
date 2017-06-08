@@ -2,18 +2,38 @@
 #include "FS.h"
 #include <node-WiFi.h>
 
+class Parent{
+protected:
+  String _value;
+public:
+  inline Parent(){};
+  virtual void set();
+  inline void show(){ Serial.println(this->_value.c_str()); };
+};
+void Parent::set(){ this->_value = "Parent"; };
+class Child: public Parent{
+public:
+  inline Child(): Parent(){};
+  void set();
+};
+void Child::set(){ this->_value = "Child"; };
+
 void setup(){
   Serial.begin(115200);
   Serial.println();
 
-  prepFS(true);
+  Child _ch;
+  _ch.set();
+  _ch.show();
+
+  //prepFS(true);
 
   //Serial.println("Create AP Config");
-  nodeAPConfig _config = new APConfig();
+  //nodeAPConfig _config = new APConfig();
   //_config->save();
   //if (_config->load()) Serial.println(_config->toString());
   //else Serial.println("fail save/load config");
-  Serial.println(_config->toString());
+  //Serial.println(_config->toString());
 
   //nodeAPConfig _apConfig = new APConfig();
   //if (!_apConfig->load()) _apConfig = APConfig::defaultConfig();

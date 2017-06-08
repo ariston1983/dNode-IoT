@@ -12,6 +12,7 @@ private:
 protected:
   String _module;
   JsonVariant _storage;
+  JsonVariant createStorage(int bufferSize = 512);
   void init();
   virtual void reset();
 public:

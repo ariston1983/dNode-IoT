@@ -30,9 +30,7 @@ void nodeConfig::init(){
   this->reset();
 };
 void nodeConfig::reset(){
-  DynamicJsonBuffer _buffer(512);
-  this->_storage = _buffer.createObject();
-  this->_storage["module"] = this->_module.c_str();
+  this->_storage = nodeConfig::createStorage();
 };
 String nodeConfig::fsPath(){
   String _path = "/config-"+this->_module+".json";

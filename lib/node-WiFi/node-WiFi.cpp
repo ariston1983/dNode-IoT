@@ -36,9 +36,10 @@ APConfig* APConfig::defaultConfig(){
   return _config;
 };
 void APConfig::reset(){
-  nodeConfig::reset();
   //DynamicJsonBuffer _buffer(512);
   //this->_storage = _buffer.createObject();
+  //this->_storage["module"] = this->_module.c_str();
+  this->_storage = this->createStorage();
   this->set<const char*>("ssid", "node-AP");
   this->set<const char*>("password", "node-AP");
   this->set<int>("channel", 6);
