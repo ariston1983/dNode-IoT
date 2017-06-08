@@ -4,19 +4,51 @@
 
 class Parent{
 protected:
-  String _value;
+  const char* _storage;
+  JsonObject& createJsonEngine();
+  void storeJson(JsonObject& json);
 public:
-  inline Parent(){};
+  Parent();
   virtual void set();
-  inline void show(){ Serial.println(this->_value.c_str()); };
+  inline void show(){ Serial.println(this->_storage); };
 };
-void Parent::set(){ this->_value = "Parent"; };
+Parent::Parent(){
+  this->_storage = "";
+};
+JsonObject& Parent::createJsonEngine(){
+  Serial.println("Create json object");
+  DynamicJsonBuffer _buffer(512);
+  JsonObject& _obj = _buffer.parseObject(this->_storage);
+  _obj["base"] = "json";
+  _obj.printTo(Serial);
+  return _obj;
+};
+void Parent::storeJson(JsonObject& json){
+  Serial.println("Store json into storage");
+  json.printTo(Serial);
+  char _store[json.measureLength()+1];
+  json.printTo(_store, sizeof(_store));
+  Serial.println(_store);
+  this->_storage = _store;
+};
+void Parent::set(){
+  JsonObject& _obj = this->createJsonEngine();
+  _obj["parent"] = "parent";
+  _obj.printTo(Serial);
+  this->storeJson(_obj);
+};
 class Child: public Parent{
 public:
   inline Child(): Parent(){};
   void set();
 };
-void Child::set(){ this->_value = "Child"; };
+void Child::set(){
+  JsonObject& _obj = this->createJsonEngine();
+  _obj["child"] = "child";
+  Serial.println("Current child object");
+  _obj.printTo(Serial);
+  this->storeJson(_obj);
+};
 
 void setup(){
   Serial.begin(115200);
