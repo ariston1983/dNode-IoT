@@ -2,40 +2,33 @@
 #include "FS.h"
 #include <node-WiFi.h>
 
+JsonObject& createJson(String toParse = "{}", int size = 512){
+  DynamicJsonBuffer _buffer(size);
+  JsonVariant _obj = _buffer.parseObject(toParse);
+  if (!_obj.is<JsonObject>()) _obj = _buffer.createObject();
+  return _obj.as<JsonObject>();
+};
+String stringify(JsonVariant json){
+  int _len = json.measureLength()+1;
+  char _store[_len];
+  json.printTo(_store, _len);
+  return _store;
+};
+
 class Parent{
-protected:
-  const char* _storage;
-  JsonObject& createJsonEngine();
-  void storeJson(JsonObject& json);
 public:
+  String _storage;
   Parent();
   virtual void set();
   inline void show(){ Serial.println(this->_storage); };
 };
 Parent::Parent(){
-  this->_storage = "";
-};
-JsonObject& Parent::createJsonEngine(){
-  Serial.println("Create json object");
-  DynamicJsonBuffer _buffer(512);
-  JsonObject& _obj = _buffer.parseObject(this->_storage);
-  _obj["base"] = "json";
-  _obj.printTo(Serial);
-  return _obj;
-};
-void Parent::storeJson(JsonObject& json){
-  Serial.println("Store json into storage");
-  json.printTo(Serial);
-  char _store[json.measureLength()+1];
-  json.printTo(_store, sizeof(_store));
-  Serial.println(_store);
-  this->_storage = _store;
+  this->_storage = "{}";
 };
 void Parent::set(){
-  JsonObject& _obj = this->createJsonEngine();
+  JsonObject& _obj = createJson(this->_storage);
   _obj["parent"] = "parent";
-  _obj.printTo(Serial);
-  this->storeJson(_obj);
+  this->_storage = stringify(_obj);
 };
 class Child: public Parent{
 public:
@@ -43,20 +36,36 @@ public:
   void set();
 };
 void Child::set(){
-  JsonObject& _obj = this->createJsonEngine();
-  _obj["child"] = "child";
-  Serial.println("Current child object");
+  Serial.println(this->_storage);
+  JsonObject& _obj = createJson(this->_storage);
   _obj.printTo(Serial);
-  this->storeJson(_obj);
+  _obj["child"] = "child";
+  this->_storage = stringify(_obj);
 };
 
 void setup(){
   Serial.begin(115200);
   Serial.println();
 
+  //DynamicJsonBuffer _buff(512);
+  //JsonObject& _obj = _buff.createObject();
+  //JsonObject& _obj = createJson("{'dodol':'dodol'}");
+  //_obj["dodol"] = "testing";
+  //_obj.printTo(Serial);
+  //String _st = stringify(_obj);
+  //Serial.println(_st);
+
+  //Parent _pr;
+  //JsonVariant _obj = _pr.createJsonEngine();
+  //_obj["test"] = "parent";
+  //Serial.println(_obj.measureLength());
+  //_pr.storeJson(_obj);
+  //_pr.set();
+  //_pr.show();
   Child _ch;
   _ch.set();
   _ch.show();
+  //Serial.println(_ch._storage);
 
   //prepFS(true);
 
@@ -87,6 +96,7 @@ void setup(){
   //   _conf->set<const char*>("key2", "dodol");
   // Serial.println(_conf->toString());
 
+  Serial.println();
   Serial.println("Prep complete...");
 }
 void loop(){}
