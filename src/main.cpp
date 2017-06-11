@@ -2,18 +2,11 @@
 #include "FS.h"
 #include <node-WiFi.h>
 
-<<<<<<< HEAD
 JsonObject& createJson(String toParse = "{}", int size = 512){
   DynamicJsonBuffer _buffer(size);
   JsonVariant _obj = _buffer.parseObject(toParse);
   if (!_obj.is<JsonObject>()) _obj = _buffer.createObject();
   return _obj.as<JsonObject>();
-=======
-JsonVariant createJson(String toParse = "{}", int size = 512){
-  DynamicJsonBuffer _buffer(size);
-  JsonVariant _obj = _buffer.createObject();
-  return _obj;
->>>>>>> 6a0e5a1188cd206d8508edd1014e0b31279f81a2
 };
 String stringify(JsonVariant json){
   int _len = json.measureLength()+1;
@@ -33,13 +26,8 @@ Parent::Parent(){
   this->_storage = "{}";
 };
 void Parent::set(){
-<<<<<<< HEAD
   JsonObject& _obj = createJson(this->_storage);
   _obj["parent"] = "parent";
-=======
-  JsonVariant _obj = createJson(this->_storage);
-  _obj["test"] = "parent";
->>>>>>> 6a0e5a1188cd206d8508edd1014e0b31279f81a2
   this->_storage = stringify(_obj);
 };
 class Child: public Parent{
@@ -48,33 +36,22 @@ public:
   void set();
 };
 void Child::set(){
-<<<<<<< HEAD
   Serial.println(this->_storage);
   JsonObject& _obj = createJson(this->_storage);
   _obj.printTo(Serial);
   _obj["child"] = "child";
   this->_storage = stringify(_obj);
-=======
->>>>>>> 6a0e5a1188cd206d8508edd1014e0b31279f81a2
 };
 
 void setup(){
   Serial.begin(115200);
   Serial.println();
 
-<<<<<<< HEAD
   //DynamicJsonBuffer _buff(512);
   //JsonObject& _obj = _buff.createObject();
   //JsonObject& _obj = createJson("{'dodol':'dodol'}");
   //_obj["dodol"] = "testing";
   //_obj.printTo(Serial);
-=======
-  DynamicJsonBuffer _buff(512);
-  JsonObject& _obj = _buff.createObject();
-  //JsonObject& _obj = createJson("{'dodol':'dodol'}");
-  _obj["dodol"] = "testing";
-  _obj.printTo(Serial);
->>>>>>> 6a0e5a1188cd206d8508edd1014e0b31279f81a2
   //String _st = stringify(_obj);
   //Serial.println(_st);
 
@@ -85,15 +62,9 @@ void setup(){
   //_pr.storeJson(_obj);
   //_pr.set();
   //_pr.show();
-<<<<<<< HEAD
   Child _ch;
   _ch.set();
   _ch.show();
-=======
-  //Child _ch;
-  //_ch.set();
-  //_ch.show();
->>>>>>> 6a0e5a1188cd206d8508edd1014e0b31279f81a2
   //Serial.println(_ch._storage);
 
   //prepFS(true);

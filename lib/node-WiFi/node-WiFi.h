@@ -5,23 +5,24 @@ int WiFi_scanAP(String *&ssid);
 IPAddress stringToIP(const char* ip);
 
 class STAConfig : public nodeConfig{
-protected:
-  virtual void reset() override;
 public:
   static STAConfig* defaultConfig();
-  inline STAConfig(): nodeConfig("node-STA"){ nodeConfig::init(); };
+  inline STAConfig(): nodeConfig("node-STA"){ };
   bool isValid();
+  String ssid(String value = "");
+  String password(String value = "");
+  virtual String toString() override;
 };
 class APConfig : public nodeConfig{
-protected:
-  virtual void reset() override;
 public:
   static APConfig* defaultConfig();
-  inline APConfig(): nodeConfig("node-AP"){ nodeConfig::init(); };
+  inline APConfig(): nodeConfig("node-AP"){ };
   bool isValid();
-  IPAddress localIP(String def = "192.168.4.1");
-  IPAddress gateway(String def = "192.168.4.1");
-  IPAddress subnet(String def = "255.255.255.0");
+  String ssid(String value = "");
+  IPAddress localIP(String value = "192.168.4.1");
+  IPAddress gateway(String value = "192.168.4.1");
+  IPAddress subnet(String value = "255.255.255.0");
+  virtual String toString() override;
 };
 typedef STAConfig* nodeSTAConfig;
 typedef APConfig* nodeAPConfig;

@@ -25,54 +25,48 @@ String readFile(String path){
   }
   return _content;
 };
+String stringify(JsonVariant json){
+  String _str = "";
+  if (json){
+    int _len = json.measureLength();
+    char _store[_len];
+    json.printTo(_store, _len);
+    _str += _store;
+  }
+  return _str;
+};
 
-void nodeConfig::init(){
-  this->reset();
-};
-void nodeConfig::reset(){
-  this->_storage = nodeConfig::createStorage();
-};
 String nodeConfig::fsPath(){
   String _path = "/config-"+this->_module+".json";
   return _path;
 };
 nodeConfig::nodeConfig(String module){
   this->_module = module;
-  this->reset();
 };
 bool nodeConfig::load(){
   String _fsContent = readFile(this->fsPath());
-  bool _res = this->parseString(_fsContent);
-  if (_res && !this->isEqual<const char*>("module", this->_module.c_str())){
-    this->reset();
-    _res = false;
-  }
-  return _res;
+  return this->parseString(_fsContent);
 };
 bool nodeConfig::save(){
-  writeFile(this->fsPath(), this->toString());
-  return true;
+  return writeFile(this->fsPath(), this->toString());
 };
 bool nodeConfig::parseString(String json){
   if (json != NULL && json != ""){
     DynamicJsonBuffer _buffer(json.length());
-    this->_storage = _buffer.parseObject(json);
+    JsonVariant _var = _buffer.parseObject(json);
+    if (!_var.is<JsonObject>()) return false;
+    JsonObject& _obj = _var.as<JsonObject>();
+    if (_obj["module"] != this->_module.c_str()) return false;
     return true;
   }
-  else{
-    this->reset();
-    return false;
-  }
+  else return false;
 }
 String nodeConfig::toString(){
   Serial.println("json stringify");
-  if (!this->_storage || this->_storage == NULL){
-    Serial.println("NULL storage");
-    return "";
-  }
-  char _json[this->_storage.measureLength()+1];
-  this->_storage.printTo(_json, sizeof(_json));
-  return _json;
+  DynamicJsonBuffer _buffer(512);
+  JsonObject& _obj = _buffer.createObject();
+  _obj["module"] = this->_module.c_str();
+  return stringify(_obj);
 };
 
 nodeConfig* loadConfig(String module){
