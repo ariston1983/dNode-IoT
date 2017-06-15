@@ -1,12 +1,8 @@
-#include "Arduino.h"
-#include "FS.h"
-#include <ArduinoJson.h>
+#ifndef __NODE_CONFIG__
+#define __NODE_CONFIG__
 
-void prepFS(bool format = false);
-bool fileExists(String path);
-bool writeFile(String path, String content);
-String readFile(String path);
-String stringify(JsonVariant json);
+#include <node-Helper.h>
+#include <node-Query.h>
 
 class nodeConfig{
 private:
@@ -15,10 +11,14 @@ protected:
   String _module;
   virtual bool parseString(String toParse);
   virtual void defaultConfig();
+  void init();
 public:
   nodeConfig(String module);
+  inline virtual String query(nodeQuery* query){ Serial.println("Query not implemented"); return ""; };
   bool exists();
   bool load();
   bool save();
-  String toString();
+  virtual String toString();
 };
+
+#endif

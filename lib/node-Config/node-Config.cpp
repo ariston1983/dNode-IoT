@@ -1,51 +1,19 @@
 #include <node-Config.h>
 
-void prepFS(bool format){
-  if (!SPIFFS.exists("/fs.info") || format){
-    SPIFFS.format();
-    File _file = SPIFFS.open("/fs.info", "w");
-    _file.println("FS ready indicator");
-    _file.close();
-  }
-};
-bool fileExists(String path){
-  prepFS();
-  return SPIFFS.exists(path.c_str());
-};
-bool writeFile(String path, String content){
-  prepFS();
-  File _file = SPIFFS.open(path.c_str(), "w");
-  bool _res = _file.println(content.c_str());
-  _file.close();
-  return _res;
-};
-String readFile(String path){
-  String _content = "";
-  if (fileExists(path)){
-    File _file = SPIFFS.open(path.c_str(), "r");
-    _content += _file.readString();
-    _file.close();
-  }
-  return _content;
-};
-String stringify(JsonVariant json){
-  int _len = json.measureLength()+1;
-  char _store[_len];
-  json.printTo(_store, _len);
-  String _str = _store;
-  return _str;
-};
-
 String nodeConfig::fsPath(){
   String _path = "/config-"+this->_module+".json";
   return _path;
 };
-void nodeConfig::defaultConfig(){ };
+void nodeConfig::defaultConfig(){ Serial.println("defaultConfig not implemented"); };
+void nodeConfig::init(){
+  if (!this->exists()) this->defaultConfig();
+  else this->load();
+};
 nodeConfig::nodeConfig(String module){
   this->_module = module;
-  if (!this->exists()) this->defaultConfig();
 };
 bool nodeConfig::exists(){
+  Serial.println("Check existing config");
   return fileExists(this->fsPath());
 };
 bool nodeConfig::load(){

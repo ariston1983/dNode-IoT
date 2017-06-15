@@ -1,100 +1,28 @@
 #include "Arduino.h"
-#include "FS.h"
+#include <node-Query.h>
+#include <node-Config.h>
+#include <node-Module.h>
 #include <node-WiFi.h>
-
-JsonObject& createJson(String toParse = "{}", int size = 512){
-  DynamicJsonBuffer _buffer(size);
-  JsonVariant _obj = _buffer.parseObject(toParse);
-  if (!_obj.is<JsonObject>()) _obj = _buffer.createObject();
-  return _obj.as<JsonObject>();
-};
-String stringify(JsonVariant json){
-  int _len = json.measureLength()+1;
-  char _store[_len];
-  json.printTo(_store, _len);
-  return _store;
-};
-
-class Parent{
-public:
-  String _storage;
-  Parent();
-  virtual void set();
-  inline void show(){ Serial.println(this->_storage); };
-};
-Parent::Parent(){
-  this->_storage = "{}";
-};
-void Parent::set(){
-  JsonObject& _obj = createJson(this->_storage);
-  _obj["parent"] = "parent";
-  this->_storage = stringify(_obj);
-};
-class Child: public Parent{
-public:
-  inline Child(): Parent(){};
-  void set();
-};
-void Child::set(){
-  Serial.println(this->_storage);
-  JsonObject& _obj = createJson(this->_storage);
-  _obj.printTo(Serial);
-  _obj["child"] = "child";
-  this->_storage = stringify(_obj);
-};
 
 void setup(){
   Serial.begin(115200);
   Serial.println();
 
-  //DynamicJsonBuffer _buff(512);
-  //JsonObject& _obj = _buff.createObject();
-  //JsonObject& _obj = createJson("{'dodol':'dodol'}");
-  //_obj["dodol"] = "testing";
-  //_obj.printTo(Serial);
-  //String _st = stringify(_obj);
-  //Serial.println(_st);
+  nodeQuery* _query = new nodeQuery(
+      "node-AP"
+    , "config"
+    , "set"
+    , "{'ssid':'dodol', 'password': 'dodol', 'channel': 6, 'hidden': false, 'localIP': '192.168.1.1', 'gateway': '192.168.1.1', 'subnet': '255.255.255.0'}"
+  );
+  Serial.println("query");
+  Serial.println(_query->toString());
 
-  //Parent _pr;
-  //JsonVariant _obj = _pr.createJsonEngine();
-  //_obj["test"] = "parent";
-  //Serial.println(_obj.measureLength());
-  //_pr.storeJson(_obj);
-  //_pr.set();
-  //_pr.show();
-  Child _ch;
-  _ch.set();
-  _ch.show();
-  //Serial.println(_ch._storage);
+  nodeAPConfig _config = new APConfig();
+  Serial.println("config");
+  Serial.println(_config->toString());
 
-  //prepFS(true);
-
-  //Serial.println("Create AP Config");
-  //nodeAPConfig _config = new APConfig();
-  //_config->save();
-  //if (_config->load()) Serial.println(_config->toString());
-  //else Serial.println("fail save/load config");
-  //Serial.println(_config->toString());
-
-  //nodeAPConfig _apConfig = new APConfig();
-  //if (!_apConfig->load()) _apConfig = APConfig::defaultConfig();
-  //Serial.println(_apConfig->toString());
-
-  //APControl* _ap = new APControl();
-  //APControl* _ap = new APControl("dNode-AP", "dNode-AP", 6, false);
-  //_ap.saveConfig();
-
-  // nConfig* _apConf = loadConfig("wifi-AP");
-  // Serial.println(_apConf->toString());
-  // if (_apConf->has("localIP")) Serial.println("Has LocalIP config");
-  // else Serial.println("No LocalIP config");
-
-  // SPIFFS.begin();
-  //
-  // nConfig* _conf = loadConfig("dummy");
-  // if (!_conf->has("key2")) //Serial.println("no key2 config");
-  //   _conf->set<const char*>("key2", "dodol");
-  // Serial.println(_conf->toString());
+  String _res = _config->query(_query);
+  Serial.println(_res);
 
   Serial.println();
   Serial.println("Prep complete...");
