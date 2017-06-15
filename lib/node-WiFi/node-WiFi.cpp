@@ -14,47 +14,54 @@ IPAddress stringToIP(const char* ip){
   return _ip;
 };
 
-STAConfig* STAConfig::defaultConfig(){
-  nodeSTAConfig _config = new STAConfig();
-  _config->reset();
-  _config->save();
-  return _config;
+bool STAConfig::parseString(String toParse){
+  if (nodeConfig::parseString(toParse)){
+    DynamicJsonBuffer _buffer(toParse.length());
+    JsonVariant _var = _buffer.parseObject(toParse.c_str());
+    JsonObject& _obj = _var.as<JsonObject>();
+    this->_ssid = _obj["ssid"];
+    this->_password = _obj["password"];
+    return true;
+  }
+  else return false;
 };
-void STAConfig::reset(){
-  nodeConfig::reset();
-  nodeConfig::set<const char*>("ssid", "unknown");
-  nodeConfig::set<const char*>("password", NULL);
-};
-bool STAConfig::isValid(){
-  return !nodeConfig::isEqual<const char*>("ssid", "");
+void STAConfig::defaultConfig(){
+  this->_ssid = "";
+  this->_password = "";
 };
 
-APConfig* APConfig::defaultConfig(){
-  nodeAPConfig _config = new APConfig();
-  _config->reset();
-  _config->save();
-  return _config;
+bool APConfig::parseString(String toParse){
+  if (nodeConfig::parseString(toParse)){
+    DynamicJsonBuffer _buffer(toParse.length());
+    JsonVariant _var = _buffer.parseObject(toParse.c_str());
+    JsonObject& _obj = _var.as<JsonObject>();
+    this->_ssid = _obj["ssid"];
+    this->_password = _obj["password"];
+    this->_channel = _obj["channel"];
+    this->_hidden = _obj["hidden"];
+    this->_localIP = _obj["localIP"];
+    this->_gateway = _obj["gateway"];
+    this->_subnet = _obj["subnet"];
+    return true;
+  }
+  else return false;
 };
-void APConfig::reset(){
-  //DynamicJsonBuffer _buffer(512);
-  //this->_storage = _buffer.createObject();
-  //this->_storage["module"] = this->_module.c_str();
-  this->_storage = this->createStorage();
-  this->set<const char*>("ssid", "node-AP");
-  this->set<const char*>("password", "node-AP");
-  this->set<int>("channel", 6);
-  this->set<bool>("hidden", false);
-  this->set<const char*>("localIP", "192.168.4.1");
-  this->set<const char*>("gateway", "192.168.4.1");
-  this->set<const char*>("subnet", "255.255.255.0");
+void APConfig::defaultConfig(){
+  this->_ssid = "node-AP";
+  this->_password = "1234567";
+  this->_channel = 6;
+  this->_hidden = false;
+  this->_localIP = "192.168.4.1";
+  this->_gateway = "192.168.4.1";
+  this->_subnet = "255.255.255.0";
 };
 bool APConfig::isValid(){
   return
-    !this->isEqual<const char*>("ssid", "") &&
-    (this->get<int>("channel") > 0 && this->get<int>("channel") <= 13) &&
-    !this->isEqual<const char*>("localIP", "") &&
-    !this->isEqual<const char*>("gateway", "") &&
-    !this->isEqual<const char*>("subnet", "");
+    this->_ssid != "" &&
+    this->_channel > 0 && this->_channel <= 13 &&
+    this->_localIP != "" &&
+    this->_gateway != "" &&
+    this->_subnet != "";
 };
 
 nodeAP::nodeAP(nodeAPConfig config){};

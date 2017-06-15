@@ -5,23 +5,35 @@ int WiFi_scanAP(String *&ssid);
 IPAddress stringToIP(const char* ip);
 
 class STAConfig : public nodeConfig{
+private:
+  const char* _ssid;
+  const char* _password;
 protected:
-  virtual void reset() override;
+  virtual bool parseString(String toParse) override;
+  virtual void defaultConfig() override;
 public:
-  static STAConfig* defaultConfig();
-  inline STAConfig(): nodeConfig("node-STA"){ nodeConfig::init(); };
-  bool isValid();
+  inline STAConfig(): nodeConfig("node-STA"){ };
+  inline bool isValid(){ return this->_ssid != ""; };
+  inline void setSSID(const char* ssid){ if (ssid != "") this->_ssid = ssid; };
+  inline const char* getSSID(){ return this->_ssid; };
+  inline void setPassword(const char* password){ this->_password = password; };
+  inline const char* getPassword(){ return this->_password; };
 };
 class APConfig : public nodeConfig{
+private:
+  const char* _ssid;
+  const char* _password;
+  int _channel;
+  bool _hidden;
+  const char* _localIP;
+  const char* _gateway;
+  const char* _subnet;
 protected:
-  virtual void reset() override;
+  virtual bool parseString(String toParse) override;
+  virtual void defaultConfig() override;
 public:
-  static APConfig* defaultConfig();
-  inline APConfig(): nodeConfig("node-AP"){ nodeConfig::init(); };
+  inline APConfig(): nodeConfig("node-AP"){ };
   bool isValid();
-  IPAddress localIP(String def = "192.168.4.1");
-  IPAddress gateway(String def = "192.168.4.1");
-  IPAddress subnet(String def = "255.255.255.0");
 };
 typedef STAConfig* nodeSTAConfig;
 typedef APConfig* nodeAPConfig;
