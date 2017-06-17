@@ -2,6 +2,7 @@
 #define __NODE_WIFI__
 
 #include "ESP8266WiFi.h"
+#include <string>
 #include <node-Config.h>
 #include <node-Query.h>
 #include <node-Module.h>
