@@ -14,22 +14,6 @@ IPAddress stringToIP(const char* ip){
   return _ip;
 };
 
-bool STAConfig::parseString(String toParse){
-  if (nodeConfig::parseString(toParse)){
-    DynamicJsonBuffer _buffer(toParse.length());
-    JsonVariant _var = _buffer.parseObject(toParse.c_str());
-    JsonObject& _obj = _var.as<JsonObject>();
-    this->_ssid = _obj["ssid"];
-    this->_password = _obj["password"];
-    return true;
-  }
-  else return false;
-};
-void STAConfig::defaultConfig(){
-  this->_ssid = "";
-  this->_password = "";
-};
-
 bool APConfig::parseString(String toParse){
   if (nodeConfig::parseString(toParse)){
     DynamicJsonBuffer _buffer(toParse.length());
@@ -154,60 +138,40 @@ String APConfig::toString(){
   return stringify(_obj);
 };
 
-bool nodeAP::loadConfig(){
+bool init(){
   this->_config = new APConfig();
-  return this->_config->load();
+  if (this->_config->load()){
+    if (this->_config->isValid()){
+      WiFi.softAPdisconnect();
+      WiFi.softAPConfig(this->_config->getLocalIPA(), this->_config->getGatewayIPA(), this->_config->getSubnetIPA());
+      return WiFi.softAP(this->_config->getSSID(), this->_config->getPassword(), this->_config->getChannel(), this->_config->getHidden() ? 1 : 0);
+    }
+    else return doLog<bool>("Invalid saved AP config", false);
+  }
+  else return doLog<bool>("Unable load AP config", false);
 };
-nodeConfig& nodeAP::getConfig(){
-  return *this->_config;
-};
-const char* query(nodeQuery* query){
+std::string nodeAP::execute(nodeQuery *query){ return ""; };
+bool nodeAP::loop(){ return false; };
 
-};
-bool nodeAP::start(){
-  if (this->isRunning()){
-    Serial.println("AP already running");
-    return false;
-  };
-  if (!this->_config->isValid()){
-    Serial.println("Invalid AP configuration");
-    return false;
-  };
-  if (!WiFi.softAPConfig(this->_config->getLocalIPA(), this->_config->getGatewayIPA(), this->_config->getSubnetIPA())){
-    Serial.println("Unable setup AP IPs");
-    return false;
+bool STAConfig::parseString(String toParse){
+  if (nodeConfig::parseString(toParse)){
+    DynamicJsonBuffer _buffer(toParse.length());
+    JsonVariant _var = _buffer.parseObject(toParse.c_str());
+    JsonObject& _obj = _var.as<JsonObject>();
+    this->_ssid = _obj["ssid"];
+    this->_password = _obj["password"];
+    return true;
   }
-  int _hidden = (this->_config->getHidden() ? 1 : 0);
-  if (!WiFi.softAP(this->_config->getSSID(), this->_config->getPassword(), this->_config->getChannel(), _hidden)){
-    Serial.println("Unable start AP");
-    return false;
-  }
-  Serial.println("AP established");
-  return true;
+  else return false;
 };
-bool nodeAP::pause(){
-  Serial.println("Pausing AP is not supported");
-  return false;
-};
-bool nodeAP::stop(){
-  bool _res = WiFi.softAPdisconnect(false);
-  Serial.println(_res ? "AP disconnected" : "Failed to disconnect AP");
-  return _res;
+void STAConfig::defaultConfig(){
+  this->_ssid = "";
+  this->_password = "";
 };
 
 bool nodeSTA::loadConfig(){
   this->_config = new STAConfig();
   return this->_config->load();
 };
-nodeConfig& nodeSTA::getConfig(){
-  return *this->_config;
-};
-bool nodeSTA::start(){
-  return false;
-};
-bool nodeSTA::pause(){
-  return false;
-};
-bool nodeSTA::stop(){
-  return false;
-};
+std::string nodeSTA::execute(nodeQuery *query){ return ""; };
+bool nodeSTA::loop(){ return false; };
