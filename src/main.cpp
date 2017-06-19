@@ -8,7 +8,7 @@
 class ModA: public nodeModule{
 public:
   inline ModA(): nodeModule(){};
-  inline virtual bool start(){ Serial.println("ModA start"); return true; };
+  inline virtual bool setup(){ Serial.println("ModA start"); return true; };
 };
 
 //ModuleFactory _fact;

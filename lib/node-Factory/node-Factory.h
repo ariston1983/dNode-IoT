@@ -26,12 +26,28 @@ public:
     if (_it == getMap()->end()) return NULL;
     else return _it->second();
   };
-  // static const char* execute(std::string const& module, nodeQuery* query){
-  //   map_Module::iterator _it = getMap()->find(module);
-  //   if (_it == getMap()->end()) return "";
-  //   else return _it->second()->query(query);
-  // };
+  static void setup(){
+    for (map_Module::iterator _it = getMap()->begin(); _it != getMap()->end(); ++_it){
+      bool _res = _it->second()->setup();
+      doLog("Setup: mod [" + _it->first + "] result: " + (_res ? "success" : "failed"));
+    };
+  };
+  static void loop(){
+    for (map_Module::iterator _it = getMap()->begin(); _it != getMap()->end(); ++_it){
+      bool _res = _it->second()->loop();
+      doLog("Loop: mod [" + _it->first + "] result: " + (_res ? "success" : "failed"));
+    };
+  };
+  static std::string execute(nodeQuery* query){
+    nodeModule* _mod = create(query->getModule());
+    if (_mod != NULL) return _mod->execute(query);
+    else doLog<std::string>("Execute: mod [" + query->getModule() + "] not found", "");
+  };
 };
+
+#ifndef __NODE_FACT_INIT__
+#define __NODE_FACT_INIT__
 map_Module* ModuleFactory::_map = new map_Module();
+#endif
 
 #endif

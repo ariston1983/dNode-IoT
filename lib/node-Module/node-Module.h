@@ -11,9 +11,9 @@ class nodeModule{
 public:
   inline nodeModule(){ };
   inline nodeConfig* getConfig(){ return NULL; };
-  inline virtual bool init(){ return doLog<bool>("Init not implemented", false); };
-  inline virtual std::string execute(nodeQuery *query){ return doLog<std::string>("Execute not implemented", ""); };
+  inline virtual bool setup(){ return doLog<bool>("Setup not implemented", false); };
   inline virtual bool loop(){ return doLog<bool>("Loop not implemented", false); };
+  inline virtual std::string execute(nodeQuery* query){ return doLog<std::string>("Execute not implemented", ""); };
 };
 
 #endif

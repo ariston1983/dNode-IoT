@@ -18,9 +18,9 @@ int WiFi_scanAP(String *&ssid){
     ssid[i] = WiFi.SSID(i);
   return _nets;
 };
-IPAddress stringToIP(const char* ip){
+IPAddress stringToIP(std::string ip){
   IPAddress _ip;
-  if (ip != NULL && ip != "") _ip.fromString(ip);
+  if (!ip.empty() && ip != "") _ip.fromString(ip.c_str());
   return _ip;
 };
 
@@ -39,13 +39,13 @@ protected:
       DynamicJsonBuffer _buffer(toParse.length());
       JsonVariant _var = _buffer.parseObject(toParse.c_str());
       JsonObject& _obj = _var.as<JsonObject>();
-      this->_ssid = _obj["ssid"];
-      this->_password = _obj["password"];
+      this->_ssid = (const char*)_obj["ssid"];
+      this->_password = (const char*)_obj["password"];
       this->_channel = _obj["channel"];
       this->_hidden = _obj["hidden"];
-      this->_localIP = _obj["localIP"];
-      this->_gateway = _obj["gateway"];
-      this->_subnet = _obj["subnet"];
+      this->_localIP = (const char*)_obj["localIP"];
+      this->_gateway = (const char*)_obj["gateway"];
+      this->_subnet = (const char*)_obj["subnet"];
       return doLog<bool>("APConfig: Parse string complete", true);
     }
     else return doLog<bool>("APConfig: Parse config failed", false);
@@ -62,85 +62,81 @@ protected:
 public:
   inline APConfig(): nodeConfig("node-AP"){ nodeConfig::init(); };
   virtual std::string execute(nodeQuery* query){
-    const char* _reqQuery = query->toString().c_str();
-    Serial.println("Processing query");
-    Serial.println(_reqQuery);
-    DynamicJsonBuffer _resBuff(512);
-    JsonObject& _res = _resBuff.createObject();
-    _res["module"] = "node-AP";
-    if (query->getModule() == "node-AP"){
-      if (query->getSubModule() == "config"){
-        if (query->getCommand() == "set"){
-          if (query->hasArguments()){
-            DynamicJsonBuffer _argsBuff(sizeof(query->getArguments()));
-            JsonObject& _args = _argsBuff.parseObject(query->getArguments());
-            this->_ssid = _args["ssid"];
-            this->_password = _args["password"];
-            this->_channel = _args["channel"];
-            this->_hidden = _args["hidden"];
-            this->_localIP = _args["localIP"];
-            this->_gateway = _args["gateway"];
-            this->_subnet = _args["subnet"];
-            bool _save = _args["save"];
-            if (_save){
-              if (this->isValid()){
-                if (this->save()){
-                  _res["code"] = 0;
-                  _res["message"] = "OK";
-                  _res["config"] = this->toString();
-                }
-                else{
-                  _res["code"] = -1;
-                  _res["message"] = "Unable to save new config";
-                }
-              }
-              else{
-                _res["code"] = -1;
-                _res["message"] = "Invalid config, cannot save";
-              }
-            }
-            else{
-              _res["code"] = 0;
-              _res["message"] = "OK";
-              _res["config"] = this->toString();
-            };
-          }
-          else{
-            _res["code"] = -1;
-            _res["message"] = "Missing config values";
-          }
+    queryResponse* _res = queryResponse::create(query);
+    if (query->getModule() == "node-AP" && query->getSubModule() == "config"){
+      if (query->getCommand() == "set" && query->hasArguments()){
+        DynamicJsonBuffer _argBuff(query->getArguments().length());
+        JsonObject& _args = _argBuff.createObject();
+        bool _valid = (_args["ssid"].as<const char*>() != "") &&
+          (_args["channel"].as<int>() > 0 && _args["channel"].as<int>() <= 13) &&
+          (_args["hidden"].is<bool>()) &&
+          (_args["localIP"].as<const char*>() != "") &&
+          (_args["gateway"].as<const char*>() != "") &&
+          (_args["subnet"].as<const char*>() != "");
+        if (_valid){
+          this->_ssid = (const char*)_args["ssid"];
+          this->_password = (const char*)_args["password"];
+          this->_channel = _args["channel"];
+          this->_hidden = _args["hidden"];
+          this->_localIP = (const char*)_args["localIP"];
+          this->_gateway = (const char*)_args["gateway"];
+          this->_subnet = (const char*)_args["subnet"];
+          if (_args["save"] == true && !this->save())
+            _res = _res->
+              changeCode(-1)->
+              changeMessage("Fail save config")->
+              addData("config", this->toString());
+          else
+            _res = _res->addData("config", this->toString());
         }
-        else if (query->getCommand() == "get"){
-          _res["code"] = 0;
-          _res["message"] = "OK";
-          _res["config"] = this->toString().c_str();
-        }
-        else{
-          _res["code"] = -1;
-          _res["message"] = "Unsupported command";
-        }
+        else
+        _res = _res->
+          changeCode(-1)->
+          changeMessage("Invalid config");
       }
-      else{
-        _res["code"] = -1;
-        _res["message"] = "Invalid sub module, should set [config]";
-      };
+      else if (query->getCommand() == "get")
+        _res = _res->addData("config", this->toString());
+      else
+        _res = _res->
+          changeCode(-1)->
+          changeMessage("Not supported command")->
+          addData("command", query->getCommand());
     }
-    else{
-      _res["code"] = -1;
-      _res["message"] = "Invalid module";
-    };
-    std::string _resStr = stringify(_res);
+    else
+      _res = _res->
+        changeCode(-1)->
+        changeMessage("Invalid query");
+    std::string _resStr = _res->toString();
     return doLog<std::string>("APConfig: Query response: "+_resStr, _resStr);
   };
-  bool isValid();
+  bool isValid(){
+    return
+      !this->_ssid.empty() && this->_ssid != "" &&
+      this->_channel > 0 && this->_channel <= 13 &&
+      !this->_localIP.empty() && this->_localIP != "" &&
+      !this->_gateway.empty() && this->_gateway != "" &&
+      !this->_subnet.empty() && this->_subnet != "";
+  };
   inline std::string getSSID(){ return this->_ssid; };
   inline std::string getPassword(){ return this->_password; };
   inline int getChannel(){ return this->_channel; };
   inline bool getHidden(){ return this->_hidden; }
-  IPAddress getLocalIPA();
-  IPAddress getGatewayIPA();
-  IPAddress getSubnetIPA();
-  virtual std::string toString() override;
+  inline IPAddress getLocalIPA(){ return stringToIP(this->_localIP); };
+  inline IPAddress getGatewayIPA(){ return stringToIP(this->_gateway); };
+  inline IPAddress getSubnetIPA(){ return stringToIP(this->_subnet); };
+  virtual std::string toString(){
+    std::string _baseString = nodeConfig::toString();
+    DynamicJsonBuffer _buffer(_baseString.length());
+    JsonObject& _obj = _buffer.parseObject(_baseString.c_str());
+    _obj["ssid"] = this->_ssid.c_str();
+    _obj["password"] = this->_password.c_str();
+    _obj["channel"] = this->_channel;
+    _obj["hidden"] = this->_hidden;
+    _obj["localIP"] = this->_localIP.c_str();
+    _obj["gateway"] = this->_gateway.c_str();
+    _obj["subnet"] = this->_subnet.c_str();
+    return stringify(_obj);
+  };
 };
 typedef APConfig* nodeAPConfig;
 class nodeAP : public nodeModule{
@@ -149,9 +145,38 @@ private:
 public:
   inline nodeAP() : nodeModule(){ };
   inline virtual nodeConfig* getConfig(){ return this->_config; };
-  virtual bool init() override;
-  virtual std::string execute(nodeQuery *query) override;
-  virtual bool loop() override;
+  virtual bool setup(){
+    this->_config = new APConfig();
+    if (this->_config->load()){
+      if (this->_config->isValid()){
+        WiFi.softAPdisconnect();
+        WiFi.softAPConfig(
+          this->_config->getLocalIPA(),
+          this->_config->getGatewayIPA(),
+          this->_config->getSubnetIPA());
+        return WiFi.softAP(
+          this->_config->getSSID().c_str(),
+          this->_config->getPassword().c_str(),
+          this->_config->getChannel(),
+          this->_config->getHidden() ? 1 : 0);
+      }
+      else return doLog<bool>("Invalid saved AP config", false);
+    }
+    else return doLog<bool>("Unable load AP config", false);
+  };
+  virtual bool loop(){ return false; };
+  virtual std::string execute(nodeQuery* query){
+    if (query != NULL){
+      if (!query->getSubModule().empty() && query->getSubModule() == "config")
+        return this->_config->execute(query);
+      else{
+        DynamicJsonBuffer _resBuff(512);
+        JsonObject& _obj = _resBuff.createObject();
+      }
+    }
+    else return doLog<std::string>("nodeAP: query not found", "");
+    return "";
+  };
 };
 
 class STAConfig : public nodeConfig{
@@ -159,11 +184,24 @@ private:
   std::string _ssid;
   std::string _password;
 protected:
-  virtual bool parseString(std::string toParse) override;
-  virtual void defaultConfig() override;
+  virtual bool parseString(std::string toParse){
+    if (nodeConfig::parseString(toParse)){
+      DynamicJsonBuffer _buffer(toParse.length());
+      JsonVariant _var = _buffer.parseObject(toParse.c_str());
+      JsonObject& _obj = _var.as<JsonObject>();
+      this->_ssid = (const char*)_obj["ssid"];
+      this->_password = (const char*)_obj["password"];
+      return true;
+    }
+    else return false;
+  };
+  virtual void defaultConfig(){
+    this->_ssid = "";
+    this->_password = "";
+  };
 public:
   inline STAConfig(): nodeConfig("node-STA"){ nodeConfig::init(); };
-  inline bool isValid(){ return this->_ssid != NULL && this->_ssid != ""; };
+  inline bool isValid(){ return !this->_ssid.empty() && this->_ssid != ""; };
   inline void setSSID(std::string ssid){ if (ssid != "") this->_ssid = ssid; };
   inline std::string getSSID(){ return this->_ssid; };
   inline void setPassword(std::string password){ this->_password = password; };
@@ -176,8 +214,9 @@ private:
 public:
   inline nodeSTA(): nodeModule(){ };
   inline virtual nodeConfig* getConfig(){ return this->_config; };
-  virtual std::string execute(nodeQuery *query);
-  virtual bool loop();
+  virtual bool setup(){ return false; };
+  virtual std::string execute(nodeQuery *query){ return ""; };
+  virtual bool loop(){ return false; };
 };
 
 #endif
