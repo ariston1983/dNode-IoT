@@ -70,6 +70,11 @@ protected:
     this->setSubnet("255.255.255.0");
   };
 public:
+  static nodeAPConfig* getDefault(){
+    nodeAPConfig* _conf = new nodeAPConfig();
+    _conf->defaultConfig();
+    return _conf;
+  };
   nodeAPConfig(): nodeConfig("node-AP"){ nodeConfig::init(); };
   std::string getSSID(){ return this->_ssid; };
   bool setSSID(std::string value){
@@ -125,11 +130,8 @@ public:
             else{
               DynamicJsonBuffer _buffer(query->getArguments().length());
               JsonObject& _obj = _buffer.parseObject(query->getArguments().c_str());
-              if (_obj["save"] == true || _obj["restart"] == true){
-                if (this->save()){
-                  if (_obj["restart"] == true && this->configure()) _res = _res->addData("config", this->toString());
-                  else _res = _res->changeCode(-1)->changeMessage("Unable to restart AP");
-                }
+              if (_obj["save"] == true){
+                if (this->save()) _res = _res->addData("config", this->toString());
                 else _res = _res->changeCode(-1)->changeMessage("Unable to save config");
               }
               else _res = _res->addData("config", this->toString());
@@ -164,29 +166,8 @@ public:
       validIP(this->_gateway) &&
       validIP(this->_subnet);
   };
-  bool configure(){
-    if (this->isValid()){
-      WiFi.softAPdisconnect();
-      bool _res = WiFi.softAPConfig(stringToIP(this->_localIP), stringToIP(this->_gateway), stringToIP(this->_subnet));
-      if (_res)
-        _res = WiFi.softAP(
-          this->getSSID().c_str(),
-          this->getPassword().c_str(),
-          this->getChannel(),
-          this->getHidden() ? 1 : 0);
-      if (!_res){
-        this->defaultConfig();
-        this->configure();
-      }
-      return doLog<bool>(_res ? "node-WiFi: AP ready" : "AP-CONF: AP reverted", _res);
-    }
-    else{
-      this->defaultConfig();
-      this->configure();
-      return doLog<bool>("node-WiFi: Invalid configuration", false);
-    }
-  };
 };
+
 class nodeSTAConfig: public nodeConfig{
 private:
   std::string _ssid;
@@ -230,11 +211,8 @@ public:
           else{
             DynamicJsonBuffer _buffer(query->getArguments().length());
             JsonObject& _obj = _buffer.parseObject(query->getArguments().c_str());
-            if (_obj["save"] == true || _obj["restart"] == true){
-              if (this->save()){
-                if (_obj["restart"] == true && this->configure()) _res = _res->addData("config", this->toString());
-                else _res = _res->changeCode(-1)->changeMessage("Unable to restart AP");
-              }
+            if (_obj["save"] == true){
+              if (this->save()) _res = _res->addData("config", this->toString());
               else _res = _res->changeCode(-1)->changeMessage("Unable to save config");
             }
             else _res = _res->addData("config", this->toString());
@@ -256,25 +234,76 @@ public:
     return stringify(_obj);
   };
   bool isValid(){ return !this->_ssid.empty() && this->_ssid != ""; };
-  bool configure(){
-    if (this->isValid()){
-      WiFi.disconnect();
-      WiFi.begin(this->getSSID().c_str(), this->getPassword().c_str());
-      while (WiFi.status() == WL_IDLE_STATUS) delay(100);
-    }
-    else return doLog<bool>("node-WiFi: STA configuration invalid", false);
-  };
 };
+
 class nodeWifi: public nodeModule{
 private:
-  
+  bool _apEnabled;
+  bool startAP(nodeAPConfig* config){
+    if (!this->stopAP()) return doLog<bool>("node-WiFi: Unable disable AP", false);
+    if (config->isValid()){
+      if (!WiFi.softAPConfig(stringToIP(config->getLocalIP()), stringToIP(config->getGateway()), stringToIP(config->getSubnet())))
+        return doLog<bool>("node-WiFi: Unable setup AP IP", false);
+      if (!WiFi.softAP(config->getSSID().c_str(), config->getPassword().c_str(), config->getChannel(), config->getHidden() ? 1 : 0))
+        return doLog<bool>("node-WiFi: Unable start AP", false);
+      return doLog<bool>("node-WiFi: AP started, SSID: "+config->getSSID(), true);
+    }
+    else return doLog<bool>("node-WiFi: Invalid AP config", false);
+  };
+  bool stopAP(){
+    if (_apEnabled)
+      _apEnabled = !WiFi.softAPdisconnect();
+    doLog(_apEnabled ? "node-WiFi: AP still online" : "node-WiFi: AP disabled");
+    return _apEnabled;
+  };
+  bool connectSTA(nodeSTAConfig* config){
+    if (WiFi.SSID() == config->getSSID().c_str())
+      return doLog<bool>("node-WiFi: STA already connected", true);
+    if (!this->disconnectSTA()) return doLog<bool>("node-WiFi: Unable disconnect STA", false);
+    if (config->isValid()){
+      WiFi.begin(config->getSSID().c_str(), config->getPassword().c_str());
+      while (WiFi.status() == WL_IDLE_STATUS) delay(100);
+      switch (WiFi.status()){
+        case WL_CONNECTED:
+          if (config->getAutoSwitch()) WiFi.softAPdisconnect();
+          return doLog<bool>("node-WiFi: STA connected, SSID: "+config->getSSID(), true);
+        case WL_CONNECT_FAILED: return doLog<bool>("node-WiFi: STA failed, invalid password", false);
+        case WL_NO_SSID_AVAIL: return doLog<bool>("node-WiFi: STA failed, no SSID "+config->getSSID(), false);
+        default: return doLog<bool>("node-WiFi: STA failed, disconnected", false);
+      };
+    }
+    else return doLog<bool>("node-WiFi: Invalid STA config", false);
+  };
+  bool disconnectSTA(){
+    if (this->isConnected())
+      WiFi.disconnect();
+    delay(100);
+    doLog(this->isConnected() ? "node-WiFi: STA still connected" : "node-WiFi: STA disconnected");
+    return !this->isConnected();
+  };
 public:
   nodeWifi(): nodeModule(){};
   virtual bool setup(){
     WiFi.mode(WIFI_AP_STA);
+    nodeAPConfig* _apConfig = new nodeAPConfig();
+    if (_apConfig->load()){
+      if (!this->startAP(_apConfig)){
+        _apConfig = nodeAPConfig::getDefault();
+        this->startAP(_apConfig);
+      }
+    }
+    nodeSTAConfig* _staConfig = new nodeSTAConfig();
+    if (_staConfig->load())
+      this->connectSTA(_staConfig);
+    return this->isAPEnabled() || this->isConnected();
   };
   virtual bool loop(){};
   virtual std::string execute(nodeQuery* query){};
+  inline bool isAPEnabled(){ return this->_apEnabled; };
+  bool isConnected(){
+    return WiFi.status() == WL_CONNECTED || WiFi.status() == WL_IDLE_STATUS;
+  };
+  uint8_t getStatus(){ return WiFi.status(); };
 };
 
 #endif

@@ -25,13 +25,13 @@ protected:
   };
   inline virtual void defaultConfig(){ doLog("nodeConfig: defaultConfig not implemented"); };
   void init(){
-    if (!this->exists()) this->defaultConfig();
-    else this->load();
+    if (!this->load()) this->defaultConfig();
   };
 public:
   inline nodeConfig(std::string module){ this->_module = module; };
   inline bool exists(){ return fileExists(this->fsPath()); };
   bool load(){
+    if (!this->exists()) return false;
     std::string _fsContent = readFile(this->fsPath());
     return this->parseString(_fsContent);
   };
