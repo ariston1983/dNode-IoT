@@ -18,7 +18,7 @@ void setup(){
   Serial.println();
 
   ModuleFactory::add<ModA>("ModA");
-  ModuleFactory::add<nodeAP>("nodeAP");
+  //ModuleFactory::add<nodeAP>("nodeAP");
   // nodeModule* _mod = ModuleFactory::create("ModA");
   // _mod->start();
 
